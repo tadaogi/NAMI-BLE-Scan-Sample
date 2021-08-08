@@ -14,7 +14,6 @@
 		012C307A226FD27600BADEF9 /* CentralViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012C3079226FD27600BADEF9 /* CentralViewController.swift */; };
 		012C307C226FD28C00BADEF9 /* PeripheralViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012C307B226FD28C00BADEF9 /* PeripheralViewController.swift */; };
 		012C307E226FD59500BADEF9 /* TransferService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012C307D226FD59500BADEF9 /* TransferService.swift */; };
-		A9A7C756227E1D6200F2CC59 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = A9A7C755227E1D6200F2CC59 /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,7 +28,6 @@
 		012C307D226FD59500BADEF9 /* TransferService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferService.swift; sourceTree = "<group>"; };
 		53F76A1B5D2A119C156B3CA9 /* LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		940DB595832554E780C12D56 /* SampleCode.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = SampleCode.xcconfig; path = Configuration/SampleCode.xcconfig; sourceTree = "<group>"; };
-		A9A7C755227E1D6200F2CC59 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		A9FCEFA72293634C008CC0CF /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -47,7 +45,6 @@
 		012C305B226FD13B00BADEF9 = {
 			isa = PBXGroup;
 			children = (
-				A9A7C755227E1D6200F2CC59 /* README.md */,
 				012C3066226FD13B00BADEF9 /* NAMIBLEScanSample */,
 				012C3065226FD13B00BADEF9 /* Products */,
 				A9FCEFA62293634C008CC0CF /* Frameworks */,
@@ -164,7 +161,6 @@
 			files = (
 				012C3072226FD13B00BADEF9 /* LaunchScreen.storyboard in Resources */,
 				012C306F226FD13B00BADEF9 /* Assets.xcassets in Resources */,
-				A9A7C756227E1D6200F2CC59 /* README.md in Resources */,
 				012C306D226FD13B00BADEF9 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
