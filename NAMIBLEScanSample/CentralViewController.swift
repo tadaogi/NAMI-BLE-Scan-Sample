@@ -17,6 +17,10 @@ class CentralViewController: UIViewController {
     var centralManager: CBCentralManager!
 
     var discoveredPeripheral: CBPeripheral?
+
+    var discoveredPeripheralArray: [CBPeripheral] = []
+
+
     var transferCharacteristic: CBCharacteristic?
     var writeIterationsComplete = 0
     var connectionIterationsComplete = 0
@@ -50,9 +54,9 @@ class CentralViewController: UIViewController {
      * Otherwise, scan for peripherals - specifically for our service's 128bit CBUUID
      */
     private func retrievePeripheral() {
-        //self.centralManager.scanForPeripherals(withServices: nil, options: nil)
-        self.centralManager.scanForPeripherals(withServices: nil,
-        options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+        self.centralManager.scanForPeripherals(withServices: nil, options: nil)
+        //self.centralManager.scanForPeripherals(withServices: nil,
+        //options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         /*
         let connectedPeripherals: [CBPeripheral] = (centralManager.retrieveConnectedPeripherals(withServices: [TransferService.serviceUUID]))
         
@@ -204,7 +208,7 @@ extension CentralViewController: CBCentralManagerDelegate {
         os_log("Discovered %s at %d", String(describing: peripheral.name), RSSI.intValue)
         
         let pname = peripheral.name ?? "unknown"
-        let logstr = "\(peripheral.identifier.uuidString),\(pname),\(RSSI.intValue)\n"
+        let logstr = "\(peripheral.identifier.uuidString),\(pname),didDiscover,\(RSSI.intValue)\n"
         writelocal(fname: "BLElog", text: logstr)
             
         DispatchQueue.main.async() {
@@ -229,6 +233,16 @@ extension CentralViewController: CBCentralManagerDelegate {
             centralManager.connect(peripheral, options: nil)
         }
         */
+        
+        // 複数デバイス用に修正
+        if discoveredPeripheralArray.firstIndex(of: peripheral)  == nil {
+            discoveredPeripheralArray.append(peripheral)
+        }
+
+        // And finally, connect to the peripheral.
+        os_log("Connecting to perhiperal %@", peripheral)
+        centralManager.connect(peripheral, options: nil)
+
     }
 
     /*
@@ -236,7 +250,16 @@ extension CentralViewController: CBCentralManagerDelegate {
      */
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         os_log("Failed to connect to %@. %s", peripheral, String(describing: error))
-        cleanup()
+        
+        let pname = peripheral.name ?? "unknown"
+        let logstr = "\(peripheral.identifier.uuidString),\(pname),didFailToConnect\n"
+        writelocal(fname: "BLElog", text: logstr)
+        
+        // オリジナルの cleanup() は呼ばない
+        // cleanup()
+        
+        // とらあえず、discoveredPeripheralArray から除く
+        discoveredPeripheralArray.removeAll(where: {$0 == peripheral})
     }
     
     /*
@@ -245,6 +268,21 @@ extension CentralViewController: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         os_log("Peripheral Connected")
         
+        let pname = peripheral.name ?? "unknown"
+        let logstr = "\(peripheral.identifier.uuidString),\(pname),didConnect\n"
+        writelocal(fname: "BLElog", text: logstr)
+        
+        // とらあえず、Connect だけ成功したら disconnect
+        // → これだと足りないので、services を探しに行く
+        //centralManager.cancelPeripheralConnection(peripheral)
+        // Make sure we get the discovery callbacks
+        peripheral.delegate = self
+        
+        // Search every services
+        peripheral.discoverServices(nil)
+        
+        // オリジナルのロジックは呼ばない
+        /*
         // Stop scanning
         centralManager.stopScan()
         os_log("Scanning stopped")
@@ -261,6 +299,8 @@ extension CentralViewController: CBCentralManagerDelegate {
         
         // Search only for services that match our UUID
         peripheral.discoverServices([TransferService.serviceUUID])
+        */
+        // オリジナルのロジック、ここまで
     }
     
     /*
@@ -268,6 +308,16 @@ extension CentralViewController: CBCentralManagerDelegate {
      */
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         os_log("Perhiperal Disconnected")
+        
+        let pname = peripheral.name ?? "unknown"
+        let logstr = "\(peripheral.identifier.uuidString),\(pname),didDisconnect\n"
+        writelocal(fname: "BLElog", text: logstr)
+
+        // とらあえず、discoveredPeripheralArray から除く
+        discoveredPeripheralArray.removeAll(where: {$0 == peripheral})
+
+        // オリジナルのロジックは呼ばない
+        /*
         discoveredPeripheral = nil
         
         // We're disconnected, so start scanning again
@@ -276,6 +326,8 @@ extension CentralViewController: CBCentralManagerDelegate {
         } else {
             os_log("Connection iterations completed")
         }
+        */
+        // オリジナルのロジック
     }
     
     func writelocal(fname: String, text: String) {
@@ -320,10 +372,17 @@ extension CentralViewController: CBPeripheralDelegate {
      */
     func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
         
+        // ここが呼ばれるか不明だが、念の為
+        let pname = peripheral.name ?? "unknown"
+        let logstr = "\(peripheral.identifier.uuidString),\(pname),didModifyServices\n"
+        writelocal(fname: "BLElog", text: logstr)
+
+        /*
         for service in invalidatedServices where service.uuid == TransferService.serviceUUID {
             os_log("Transfer service is invalidated - rediscover services")
             peripheral.discoverServices([TransferService.serviceUUID])
         }
+        */
     }
 
     /*
@@ -336,13 +395,21 @@ extension CentralViewController: CBPeripheralDelegate {
             return
         }
         
-        // Discover the characteristic we want...
+        let pname = peripheral.name ?? "unknown"
+        let logstr = "\(peripheral.identifier.uuidString),\(pname),didDiscoveServices\n"
+        writelocal(fname: "BLElog", text: logstr)
         
+        // とらあえず disconnect
+        centralManager.cancelPeripheralConnection(peripheral)
+
+        // オリジナルのロジックは呼ばない
+        /*
         // Loop through the newly filled peripheral.services array, just in case there's more than one.
         guard let peripheralServices = peripheral.services else { return }
         for service in peripheralServices {
             peripheral.discoverCharacteristics([TransferService.characteristicUUID], for: service)
         }
+        */
     }
     
     /*
