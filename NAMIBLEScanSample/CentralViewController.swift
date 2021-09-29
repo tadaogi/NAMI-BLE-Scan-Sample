@@ -263,7 +263,7 @@ extension CentralViewController: CBCentralManagerDelegate {
         // オリジナルの cleanup() は呼ばない
         // cleanup()
         
-        // とらあえず、discoveredPeripheralArray から除く
+        // とりあえず、discoveredPeripheralArray から除く
         discoveredPeripheralArray.removeAll(where: {$0 == peripheral})
     }
     
@@ -407,17 +407,23 @@ extension CentralViewController: CBPeripheralDelegate {
         let logstr = "didDiscoverServices,\(pname),\(peripheral.identifier.uuidString)\n"
         writelocal(fname: "BLElog", text: logstr)
         
-        // とらあえず disconnect
-        centralManager.cancelPeripheralConnection(peripheral)
+        // とりあえず disconnect
+        // → disconnect しない
+        //centralManager.cancelPeripheralConnection(peripheral)
 
         // オリジナルのロジックは呼ばない
-        /*
+        // → 呼ぶ
+        
         // Loop through the newly filled peripheral.services array, just in case there's more than one.
-        guard let peripheralServices = peripheral.services else { return }
+        guard let peripheralServices = peripheral.services else {
+            // 追加した
+            centralManager.cancelPeripheralConnection(peripheral)
+            return
+        }
         for service in peripheralServices {
             peripheral.discoverCharacteristics([TransferService.characteristicUUID], for: service)
         }
-        */
+        
     }
     
     /*
@@ -428,10 +434,22 @@ extension CentralViewController: CBPeripheralDelegate {
         // Deal with errors (if any).
         if let error = error {
             os_log("Error discovering characteristics: %s", error.localizedDescription)
-            cleanup()
+            //cleanup()
+            // 追加した
+            centralManager.cancelPeripheralConnection(peripheral)
+
             return
         }
         
+        let pname = peripheral.name ?? "unknown"
+        let logstr = "didDiscoverCharacteristicsFor,\(pname),\(peripheral.identifier.uuidString),\(service)\n"
+        writelocal(fname: "BLElog", text: logstr)
+
+        
+        // 追加した
+        centralManager.cancelPeripheralConnection(peripheral)
+
+        /*
         // Again, we loop through the array, just in case and check if it's the right one
         guard let serviceCharacteristics = service.characteristics else { return }
         for characteristic in serviceCharacteristics where characteristic.uuid == TransferService.characteristicUUID {
@@ -441,6 +459,7 @@ extension CentralViewController: CBPeripheralDelegate {
         }
         
         // Once this is complete, we just need to wait for the data to come in.
+        */
     }
     
     /*
