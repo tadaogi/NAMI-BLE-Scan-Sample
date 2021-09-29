@@ -335,6 +335,20 @@ extension CentralViewController: CBCentralManagerDelegate {
         // オリジナルのロジック
     }
     
+    // NAMI からコピー
+    public func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
+        print("didReadRSSI")
+        if (error != nil) {
+            print("error: \(String(describing: error))")
+            return
+        }
+        
+        let pname = peripheral.name ?? "unknown"
+        let logstr = "didReadRSSI,\(pname),\(peripheral.identifier.uuidString),\(RSSI)\n"
+        writelocal(fname: "BLElog", text: logstr)
+
+    }
+    
     func writelocal(fname: String, text: String) {
         loglock.lock()
         let now = Date() // 現在日時の取得
@@ -410,7 +424,10 @@ extension CentralViewController: CBPeripheralDelegate {
         // とりあえず disconnect
         // → disconnect しない
         //centralManager.cancelPeripheralConnection(peripheral)
-
+        
+        // NAMI のロジックに合わせるために、RSSI確認
+        peripheral.readRSSI()
+        
         // オリジナルのロジックは呼ばない
         // → 呼ぶ
         
