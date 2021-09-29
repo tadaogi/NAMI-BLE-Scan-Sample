@@ -9,6 +9,8 @@ import UIKit
 import CoreBluetooth
 import os
 
+var lognumber: Int = 0
+
 class CentralViewController: UIViewController {
     // UIViewController overrides, properties specific to this class, private helper methods, etc.
 
@@ -28,13 +30,16 @@ class CentralViewController: UIViewController {
     let defaultIterations = 5     // change this value based on test usecase
     
     var data = Data()
-
+    
+    let loglock = NSLock()
+    
+    
     // MARK: - view lifecycle
     
     override func viewDidLoad() {
         centralManager = CBCentralManager(delegate: self, queue: nil, options: [CBCentralManagerOptionShowPowerAlertKey: true])
         super.viewDidLoad()
-
+        writelocal(fname: "BLElog", text: "Started(ver.20210929)\n")
     }
 	
     override func viewWillDisappear(_ animated: Bool) {
@@ -208,7 +213,7 @@ extension CentralViewController: CBCentralManagerDelegate {
         os_log("Discovered %s at %d", String(describing: peripheral.name), RSSI.intValue)
         
         let pname = peripheral.name ?? "unknown"
-        let logstr = "\(peripheral.identifier.uuidString),\(pname),didDiscover,\(RSSI.intValue)\n"
+        let logstr = "didDiscoverPeripheral,\(pname),\(peripheral.identifier.uuidString),\(RSSI.intValue)\n"
         writelocal(fname: "BLElog", text: logstr)
             
         DispatchQueue.main.async() {
@@ -252,7 +257,7 @@ extension CentralViewController: CBCentralManagerDelegate {
         os_log("Failed to connect to %@. %s", peripheral, String(describing: error))
         
         let pname = peripheral.name ?? "unknown"
-        let logstr = "\(peripheral.identifier.uuidString),\(pname),didFailToConnect\n"
+        let logstr = "didFailToConnect,\(pname),\(peripheral.identifier.uuidString)\n"
         writelocal(fname: "BLElog", text: logstr)
         
         // オリジナルの cleanup() は呼ばない
@@ -269,7 +274,7 @@ extension CentralViewController: CBCentralManagerDelegate {
         os_log("Peripheral Connected")
         
         let pname = peripheral.name ?? "unknown"
-        let logstr = "\(peripheral.identifier.uuidString),\(pname),didConnect\n"
+        let logstr = "didConnect,\(pname),\(peripheral.identifier.uuidString)\n"
         writelocal(fname: "BLElog", text: logstr)
         
         // とらあえず、Connect だけ成功したら disconnect
@@ -310,7 +315,7 @@ extension CentralViewController: CBCentralManagerDelegate {
         os_log("Perhiperal Disconnected")
         
         let pname = peripheral.name ?? "unknown"
-        let logstr = "\(peripheral.identifier.uuidString),\(pname),didDisconnect\n"
+        let logstr = "didDisconnect,\(pname),\(peripheral.identifier.uuidString)\n"
         writelocal(fname: "BLElog", text: logstr)
 
         // とらあえず、discoveredPeripheralArray から除く
@@ -331,12 +336,14 @@ extension CentralViewController: CBCentralManagerDelegate {
     }
     
     func writelocal(fname: String, text: String) {
+        loglock.lock()
         let now = Date() // 現在日時の取得
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "ja_JP") // ロケールの設定
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        let currenttime = dateFormatter.string(from: now) // -> 2021-01-01 12:34:56.789
-        let logtext = "\(currenttime),\(text)"
+        dateFormatter.dateFormat = "yyyy/MM/dd HH:mm:ss.SSS"
+        let currenttime = dateFormatter.string(from: now) // -> 2021/01/01 12:34:56.789
+        let logtext = "\(currenttime),[\(lognumber)],\(text)"
+        lognumber = lognumber + 1
         
         do {
             let fileManager = FileManager.default
@@ -360,6 +367,7 @@ extension CentralViewController: CBCentralManagerDelegate {
         } catch {
             print(error)
         }
+        loglock.unlock()
     }
     
 }
@@ -374,7 +382,7 @@ extension CentralViewController: CBPeripheralDelegate {
         
         // ここが呼ばれるか不明だが、念の為
         let pname = peripheral.name ?? "unknown"
-        let logstr = "\(peripheral.identifier.uuidString),\(pname),didModifyServices\n"
+        let logstr = "didModifyServices,\(pname),\(peripheral.identifier.uuidString)\n"
         writelocal(fname: "BLElog", text: logstr)
 
         /*
@@ -396,7 +404,7 @@ extension CentralViewController: CBPeripheralDelegate {
         }
         
         let pname = peripheral.name ?? "unknown"
-        let logstr = "\(peripheral.identifier.uuidString),\(pname),didDiscoveServices\n"
+        let logstr = "didDiscoverServices,\(pname),\(peripheral.identifier.uuidString)\n"
         writelocal(fname: "BLElog", text: logstr)
         
         // とらあえず disconnect
